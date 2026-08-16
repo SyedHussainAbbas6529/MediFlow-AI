@@ -13,6 +13,14 @@ export default function PatientsPage() {
   const [emailModalData, setEmailModalData] = useState<{ isOpen: boolean; email: string; name: string } | null>(null);
   const { dataMode } = useAuth();
 
+  // Form state
+  const [fn, setFn] = useState('');
+  const [ln, setLn] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [dob, setDob] = useState('1980-01-01');
+  const [memberId, setMemberId] = useState('');
+
   const demoPatients = [
     { id: 'pat-1', first_name: 'Eleanor', last_name: 'Vance', dob: '1962-05-14', email: 'eleanor.vance@example.com', phone: '(555) 234-8901', insurance_member_id: 'MED-982341-A', payer_name: 'Medicare Part B' },
     { id: 'pat-2', first_name: 'Robert', last_name: 'Garcia', dob: '1978-11-23', email: 'robert.garcia@example.com', phone: '(555) 345-9012', insurance_member_id: 'BCBS-TX-77123', payer_name: 'BCBS of Texas' },

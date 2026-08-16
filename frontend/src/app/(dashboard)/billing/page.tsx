@@ -7,6 +7,7 @@ import {
   Search,
   CheckCircle2,
   Eye
+} from 'lucide-react';
 import ScrubbingReviewModal from '@/components/ai/ScrubbingReviewModal';
 import { useAuth } from '@/lib/auth-context';
 

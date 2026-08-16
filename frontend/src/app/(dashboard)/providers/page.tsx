@@ -13,6 +13,14 @@ export default function ProvidersPage() {
   const [emailModalData, setEmailModalData] = useState<{ isOpen: boolean; email: string; name: string } | null>(null);
   const { dataMode } = useAuth();
 
+  // Form state
+  const [fn, setFn] = useState('');
+  const [ln, setLn] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [npi, setNpi] = useState('');
+  const [specialty, setSpecialty] = useState('Orthopedic Surgery');
+
   const demoProviders = [
     { id: 'prov-1', first_name: 'Marcus', last_name: 'Vance', specialty: 'Orthopedic Surgery', readiness_status: 'Ready', readiness_score: 96, npi: '1982049182', email: 'dr.vance@mediflowai.health', phone: '(555) 304-9182', claims_count: 142 },
     { id: 'prov-2', first_name: 'Sarah', last_name: 'Jenkins', specialty: 'Internal Medicine', readiness_status: 'Ready', readiness_score: 92, npi: '1092834710', email: 'dr.jenkins@mediflowai.health', phone: '(555) 492-0193', claims_count: 88 },

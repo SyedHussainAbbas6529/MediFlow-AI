@@ -7,6 +7,7 @@ import {
   FileCheck,
   Sparkles,
   BookOpen
+} from 'lucide-react';
 import AiTextEditor from '@/components/ai/AiTextEditor';
 import { useAuth } from '@/lib/auth-context';
 
