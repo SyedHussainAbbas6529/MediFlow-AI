@@ -15,6 +15,16 @@
     --medical-cyan: #22D3EE;
   }
 
+  html.light {
+    --background: #F8FAFC;
+    --foreground: #0F172A;
+    --card: #FFFFFF;
+    --card-foreground: #0F172A;
+    --border: #E2E8F0;
+    --primary: #0284C7;
+    --primary-foreground: #FFFFFF;
+  }
+
   body {
     background-color: #090D16;
     color: #F8FAFC;
@@ -25,23 +35,91 @@
       radial-gradient(at 90% 90%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
       radial-gradient(at 50% 50%, rgba(20, 184, 166, 0.05) 0px, transparent 50%);
     background-attachment: fixed;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  html.light body {
+    background-color: #F8FAFC;
+    color: #0F172A;
+    background-image: 
+      radial-gradient(at 10% 10%, rgba(14, 165, 233, 0.05) 0px, transparent 50%),
+      radial-gradient(at 90% 90%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
+      radial-gradient(at 50% 50%, rgba(20, 184, 166, 0.03) 0px, transparent 50%);
   }
 }
 
-/* Subtle Medical Grid Pattern */
-.bg-medical-grid {
-  background-size: 32px 32px;
-  background-image: 
-    linear-gradient(to right, rgba(14, 165, 233, 0.06) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(14, 165, 233, 0.06) 1px, transparent 1px);
+/* Light Theme Component Overrides */
+html.light .bg-\[\#090D16\] {
+  background-color: #F8FAFC !important;
 }
 
-/* Dark Glassmorphism & Depth Layers */
-.glass-panel {
-  background: rgba(13, 19, 34, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(30, 41, 59, 0.8);
+html.light .bg-\[\#0D1322\] {
+  background-color: #FFFFFF !important;
+}
+
+html.light .bg-\[\#111827\] {
+  background-color: #FFFFFF !important;
+}
+
+html.light .bg-\[\#0B0F17\] {
+  background-color: #FFFFFF !important;
+}
+
+html.light .border-slate-800,
+html.light .border-slate-800\/80,
+html.light .border-slate-800\/60,
+html.light .border-slate-700 {
+  border-color: #E2E8F0 !important;
+}
+
+html.light .divide-slate-800,
+html.light .divide-slate-800\/80 {
+  border-color: #E2E8F0 !important;
+}
+
+html.light .text-white {
+  color: #0F172A !important;
+}
+
+html.light .text-slate-100,
+html.light .text-slate-200 {
+  color: #1E293B !important;
+}
+
+html.light .text-slate-300,
+html.light .text-slate-400 {
+  color: #475569 !important;
+}
+
+html.light .text-slate-500 {
+  color: #64748B !important;
+}
+
+html.light .glass-panel {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid #E2E8F0 !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+}
+
+html.light .glass-card-interactive {
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+html.light .glass-card-interactive:hover {
+  border-color: #38BDF8 !important;
+  box-shadow: 0 10px 25px -5px rgba(14, 165, 233, 0.15);
+}
+
+html.light .bg-medical-grid {
+  background-image: 
+    linear-gradient(to right, rgba(14, 165, 233, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(14, 165, 233, 0.04) 1px, transparent 1px) !important;
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background: #CBD5E1 !important;
 }
 
 .glass-card-interactive {

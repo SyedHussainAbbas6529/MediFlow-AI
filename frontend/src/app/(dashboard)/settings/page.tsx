@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { useTheme } from '@/lib/theme-context';
 import {
   Settings,
   ShieldCheck,
@@ -23,11 +24,14 @@ import {
   Lock,
   LogOut,
   UserCheck,
-  Shield
+  Shield,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
+  const { theme, setTheme, isDark } = useTheme();
   const [tab, setTab] = useState<'profile' | 'rbac' | 'integrations' | 'billing' | 'audit'>('profile');
   
   // Organization state
@@ -254,6 +258,90 @@ export default function SettingsPage() {
               <LogOut className="w-4 h-4 text-red-400" />
               <span>Sign Out / End Session</span>
             </button>
+          </div>
+
+          {/* Theme & Display Preferences Card */}
+          <div className="bg-[#111827] p-6 rounded-3xl border border-slate-800 shadow-card space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-sky-400" />
+                  <span>Display & Color Theme</span>
+                </h3>
+                <p className="text-xs text-slate-400">Choose between Clinical Dark HUD and Clean Light mode.</p>
+              </div>
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-sky-950 text-sky-300 border border-sky-800">
+                Active: {theme === 'dark' ? '🌙 Dark Mode' : '☀️ Light Mode'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+              {/* Dark Theme Option */}
+              <button
+                type="button"
+                onClick={() => setTheme('dark')}
+                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                  theme === 'dark'
+                    ? 'bg-sky-950/40 border-sky-500 shadow-md shadow-sky-500/10 ring-1 ring-sky-500'
+                    : 'bg-[#0D1322] border-slate-800 hover:border-slate-700'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center text-amber-400">
+                      <Moon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white">Dark Theme</p>
+                      <p className="text-[10px] text-slate-400">Clinical Operations HUD</p>
+                    </div>
+                  </div>
+                  {theme === 'dark' && (
+                    <span className="w-2.5 h-2.5 rounded-full bg-sky-400 animate-pulse" />
+                  )}
+                </div>
+                <div className="h-12 rounded-xl bg-[#090D16] border border-slate-800 p-2 flex items-center gap-2">
+                  <div className="w-8 h-full bg-[#111827] rounded-lg" />
+                  <div className="flex-1 space-y-1">
+                    <div className="w-3/4 h-2 bg-slate-800 rounded" />
+                    <div className="w-1/2 h-2 bg-slate-800/60 rounded" />
+                  </div>
+                </div>
+              </button>
+
+              {/* Light Theme Option */}
+              <button
+                type="button"
+                onClick={() => setTheme('light')}
+                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                  theme === 'light'
+                    ? 'bg-sky-500/10 border-sky-500 shadow-md shadow-sky-500/10 ring-1 ring-sky-500'
+                    : 'bg-[#0D1322] border-slate-800 hover:border-slate-700'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-sky-100 border border-sky-200 flex items-center justify-center text-amber-500">
+                      <Sun className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white">Light Theme</p>
+                      <p className="text-[10px] text-slate-400">Crisp High-Contrast Paper</p>
+                    </div>
+                  </div>
+                  {theme === 'light' && (
+                    <span className="w-2.5 h-2.5 rounded-full bg-sky-500 animate-pulse" />
+                  )}
+                </div>
+                <div className="h-12 rounded-xl bg-slate-100 border border-slate-200 p-2 flex items-center gap-2">
+                  <div className="w-8 h-full bg-white rounded-lg border border-slate-200" />
+                  <div className="flex-1 space-y-1">
+                    <div className="w-3/4 h-2 bg-slate-300 rounded" />
+                    <div className="w-1/2 h-2 bg-slate-200 rounded" />
+                  </div>
+                </div>
+              </button>
+            </div>
           </div>
 
           {/* Practice Information Form */}

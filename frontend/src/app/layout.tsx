@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "@/styles/globals.css";
 import { AuthProvider } from "@/lib/auth-context";
+import { ThemeProvider } from "@/lib/theme-context";
 import PWAInstallPrompt from "@/components/layout/PWAInstallPrompt";
 
 export const metadata: Metadata = {
@@ -32,10 +33,12 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
       <body className="antialiased min-h-screen bg-[#090D16] text-slate-100 selection:bg-sky-500 selection:text-white">
-        <AuthProvider>
-          {children}
-          <PWAInstallPrompt />
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            {children}
+            <PWAInstallPrompt />
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

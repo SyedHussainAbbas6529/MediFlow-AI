@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { useTheme } from '@/lib/theme-context';
 import {
   Search,
   Plus,
@@ -12,7 +13,9 @@ import {
   LogOut,
   FlaskConical,
   Activity,
-  UserCheck
+  UserCheck,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -27,6 +30,7 @@ export default function Header({
   onToggleMobileSidebar
 }: HeaderProps) {
   const { user, logout, dataMode, toggleDataMode, switchRole } = useAuth();
+  const { theme, toggleTheme, isDark } = useTheme();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const currentRole = user?.role || 'super_admin';
 
@@ -61,6 +65,20 @@ export default function Header({
 
       {/* Right Controls */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Theme Mode Toggle (Light / Dark) */}
+        <button
+          onClick={toggleTheme}
+          title={`Switch to ${isDark ? 'Light' : 'Dark'} Mode`}
+          className="p-2 rounded-2xl text-slate-300 hover:text-white bg-[#111827] hover:bg-slate-800 border border-slate-800 transition-all active:scale-95 shadow-xs cursor-pointer flex items-center justify-center group"
+          aria-label="Toggle Theme"
+        >
+          {isDark ? (
+            <Sun className="w-4 h-4 text-amber-400 group-hover:rotate-45 transition-transform duration-300" />
+          ) : (
+            <Moon className="w-4 h-4 text-sky-400 group-hover:-rotate-12 transition-transform duration-300" />
+          )}
+        </button>
+
         {/* Interactive Demo / Real Data Mode Toggle Button */}
         <button
           onClick={toggleDataMode}
