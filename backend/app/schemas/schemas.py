@@ -39,7 +39,8 @@ class PasswordResetRequest(BaseModel):
     email: EmailStr
 
 class PasswordResetConfirm(BaseModel):
-    token: str
+    token: Optional[str] = None
+    email: Optional[EmailStr] = None
     new_password: str
 
 class TwoFactorSetupResponse(BaseModel):

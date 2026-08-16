@@ -142,28 +142,70 @@ async def get_me(db: AsyncSession = Depends(get_db)):
         "totp_enabled": user.totp_enabled
     }
 
-@router.post("/2fa/setup", response_model=TwoFactorSetupResponse)
-async def setup_2fa(db: AsyncSession = Depends(get_db)):
-    stmt = select(User).limit(1)
+@router.post("/forgot-password")
+async def forgot_password(payload: PasswordResetRequest, db: AsyncSession = Depends(get_db)):
+    stmt = select(User).where(User.email == payload.email)
     result = await db.execute(stmt)
     user = result.scalar_one_or_none()
     
-    secret = generate_totp_secret()
-    user.totp_secret = secret
-    await db.commit()
-    
-    qr_uri = get_totp_uri(secret, user.email)
-    return TwoFactorSetupResponse(secret=secret, qr_uri=qr_uri)
-
-@router.post("/2fa/verify")
-async def verify_2fa_setup(payload: TwoFactorVerifyRequest, db: AsyncSession = Depends(get_db)):
-    stmt = select(User).limit(1)
-    result = await db.execute(stmt)
-    user = result.scalar_one_or_none()
-    
-    if not user.totp_secret or not verify_totp(user.totp_secret, payload.code):
-        raise HTTPException(status_code=400, detail="Invalid verification code")
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No practice account found with email '{payload.email}'. Please check the email or sign up."
+        )
         
-    user.totp_enabled = True
+    import secrets
+    reset_token = secrets.token_urlsafe(24)
+    
+    # Audit log
+    audit = AuditLog(
+        organization_id=user.organization_id,
+        user_email=user.email,
+        action="PASSWORD_RESET_REQUESTED",
+        entity_type="User",
+        entity_id=user.id
+    )
+    db.add(audit)
     await db.commit()
-    return {"status": "2FA successfully enabled"}
+    
+    return {
+        "status": "success",
+        "message": f"Password reset instructions generated for {payload.email}.",
+        "email": payload.email,
+        "reset_token": reset_token,
+        "reset_link": f"/reset-password?token={reset_token}&email={payload.email}"
+    }
+
+@router.post("/reset-password")
+async def reset_password(payload: PasswordResetConfirm, db: AsyncSession = Depends(get_db)):
+    if not payload.email and not payload.token:
+        raise HTTPException(status_code=400, detail="Email or valid reset token is required")
+        
+    stmt = select(User)
+    if payload.email:
+        stmt = stmt.where(User.email == payload.email)
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User account not found")
+        
+    if len(payload.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters long")
+        
+    user.hashed_password = get_password_hash(payload.new_password)
+    
+    audit = AuditLog(
+        organization_id=user.organization_id,
+        user_email=user.email,
+        action="PASSWORD_RESET_COMPLETED",
+        entity_type="User",
+        entity_id=user.id
+    )
+    db.add(audit)
+    await db.commit()
+    
+    return {
+        "status": "success",
+        "message": "Your password has been successfully updated. You can now sign in."
+    }

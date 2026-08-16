@@ -18,7 +18,7 @@ async def get_dashboard_metrics(db: AsyncSession = Depends(get_db)):
     denied_count = await db.scalar(select(func.count(Denial.id))) or 0
     
     # Real Paid / Collected Calculations
-    paid_stmt = select(func.sum(Claim.paid_amount)).where(Claim.status.in_(["Paid", "paid", "Approved", "approved"]))
+    paid_stmt = select(func.sum(Claim.total_charge)).where(Claim.status.in_(["Paid", "paid"]))
     collected_amount = await db.scalar(paid_stmt) or 0.0
     
     # If total_billed exists but paid_amount is 0 and status is submitted, calculate based on real status
