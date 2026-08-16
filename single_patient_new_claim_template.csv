@@ -1,0 +1,2 @@
+patient_name,dob,gender,insurance_member_id,payer_name,provider_name,provider_npi,date_of_service,icd10_primary,icd10_secondary,cpt_code,modifiers,units,total_charge,prior_auth_num,place_of_service
+"Eleanor Vance",1962-05-14,Female,MED-982341-A,"Medicare Part B (Noridian)","Dr. Marcus Vance",1982049182,2026-03-12,M17.11,M25.561,"20610, 99214","RT, 25",2,1250.00,PA-8829410-TX,11

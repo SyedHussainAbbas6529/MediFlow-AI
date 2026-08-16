@@ -1,0 +1,81 @@
+{
+  "claim_submission_type": "CMS-1500_837P",
+  "organization_id": "org-prod-001",
+  "patient": {
+    "first_name": "Eleanor",
+    "last_name": "Vance",
+    "date_of_birth": "1962-05-14",
+    "gender": "Female",
+    "address": "742 Evergreen Terrace, Austin, TX 78701",
+    "phone": "(555) 234-8901",
+    "insurance_member_id": "MED-982341-A",
+    "relationship_to_insured": "Self"
+  },
+  "payer": {
+    "payer_name": "Medicare Part B (Noridian Healthcare Solutions)",
+    "payer_id": "00832",
+    "plan_type": "Medicare Fee-For-Service",
+    "claims_mailing_address": "PO Box 6740, Fargo, ND 58108"
+  },
+  "rendering_provider": {
+    "provider_name": "Dr. Marcus Vance, MD",
+    "npi": "1982049182",
+    "taxonomy_code": "207X00000X",
+    "specialty": "Orthopedic Surgery",
+    "license_number": "TX-M98421",
+    "clinic_name": "Apex Orthopedic & Spine Surgery Center",
+    "clinic_npi": "1482910394"
+  },
+  "claim_header": {
+    "claim_number": "CLM-2026-9041",
+    "date_of_service": "2026-03-12",
+    "place_of_service_code": "11",
+    "place_of_service_description": "Office / Outpatient Clinic",
+    "total_charge": 1250.00,
+    "prior_authorization_number": "PA-8829410-TX",
+    "employment_related": false,
+    "auto_accident": false,
+    "other_accident": false
+  },
+  "diagnoses_icd10": [
+    {
+      "pointer": "A",
+      "code": "M17.11",
+      "description": "Primary unilateral osteoarthritis, right knee"
+    },
+    {
+      "pointer": "B",
+      "code": "M25.561",
+      "description": "Pain in right knee"
+    }
+  ],
+  "service_lines_cpt": [
+    {
+      "line_number": 1,
+      "date_of_service": "2026-03-12",
+      "cpt_code": "20610",
+      "modifiers": ["RT"],
+      "description": "Arthrocentesis, aspiration and/or injection; major joint or bursa (eg, shoulder, hip, knee, subacromial)",
+      "diagnosis_pointers": ["A", "B"],
+      "unit_count": 1,
+      "charge_amount": 750.00
+    },
+    {
+      "line_number": 2,
+      "date_of_service": "2026-03-12",
+      "cpt_code": "99214",
+      "modifiers": ["25"],
+      "description": "Office or other outpatient visit for the evaluation and management of an established patient (Moderate Medical Decision Making, 30-39 mins)",
+      "diagnosis_pointers": ["A"],
+      "unit_count": 1,
+      "charge_amount": 500.00
+    }
+  ],
+  "clinical_documentation_summary": "Patient presented with severe right knee pain refractory to conservative oral NSAIDs. Physical exam confirmed joint line tenderness and crepitus. Arthrocentesis with hyaluronic acid injection performed under sterile technique with no complications. Detailed evaluation and management conducted separately.",
+  "compliance_validation": {
+    "cci_bundling_modifier_checked": true,
+    "modifier_25_justified": true,
+    "medical_necessity_score": 96.5,
+    "timely_filing_deadline_days": 365
+  }
+}
