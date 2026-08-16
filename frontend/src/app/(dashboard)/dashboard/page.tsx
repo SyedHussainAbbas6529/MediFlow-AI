@@ -245,13 +245,13 @@ export default function DashboardPage() {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={claims_by_status}
+                  data={claims_by_status.length > 0 ? claims_by_status : [{ status: 'No Claims Yet', count: 1, color: '#1E293B' }]}
                   innerRadius={65}
                   outerRadius={85}
                   paddingAngle={5}
                   dataKey="count"
                 >
-                  {claims_by_status.map((entry: any, index: number) => (
+                  {(claims_by_status.length > 0 ? claims_by_status : [{ color: '#1E293B' }]).map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -259,7 +259,9 @@ export default function DashboardPage() {
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-2xl font-black text-white">{isRealMode ? '0' : '300'}</span>
+              <span className="text-2xl font-black text-white">
+                {claims_by_status.reduce((sum: number, item: any) => sum + (item.count || 0), 0)}
+              </span>
               <span className="text-[10px] uppercase font-bold text-slate-400">Total Claims</span>
             </div>
           </div>
