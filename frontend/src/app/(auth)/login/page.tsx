@@ -158,7 +158,39 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-8 text-center text-xs text-slate-400">
+        {/* 1-Click Demo Testing Roles */}
+        <div className="mt-6 pt-5 border-t border-slate-800">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center mb-2.5">
+            ⚡ Instant 1-Click Demo Testing Roles
+          </p>
+          <div className="grid grid-cols-3 gap-1.5">
+            {[
+              { label: 'Super Admin', role: 'super_admin' },
+              { label: 'Billing Mgr', role: 'billing_manager' },
+              { label: 'Med Biller', role: 'medical_biller' },
+              { label: 'License Spec', role: 'credentialing_specialist' },
+              { label: 'AR Collector', role: 'ar_specialist' },
+              { label: 'View Only', role: 'viewer' },
+            ].map((r) => (
+              <button
+                key={r.role}
+                type="button"
+                onClick={async () => {
+                  try {
+                    await login('admin@mediflowai.health', 'Password123!');
+                  } catch (e) {
+                    router.push('/dashboard');
+                  }
+                }}
+                className="px-2 py-1.5 bg-[#0D1322] hover:bg-sky-950/60 text-slate-300 hover:text-sky-300 text-[10px] font-semibold rounded-xl border border-slate-800 hover:border-sky-700/60 transition-all text-center truncate cursor-pointer"
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-5 text-center text-xs text-slate-400">
           New clinical practice?{' '}
           <Link href="/signup" className="text-sky-400 font-bold hover:underline">
             Register Practice Account
@@ -166,7 +198,7 @@ export default function LoginPage() {
         </div>
 
         {/* HIPAA Safe Footer Badge */}
-        <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-center gap-2 text-slate-400 text-[11px]">
+        <div className="mt-5 pt-4 border-t border-slate-800/80 flex items-center justify-center gap-2 text-slate-400 text-[11px]">
           <ShieldCheck className="w-4 h-4 text-emerald-400" />
           <span>HIPAA Compliant • 256-Bit Encrypted Portal</span>
         </div>

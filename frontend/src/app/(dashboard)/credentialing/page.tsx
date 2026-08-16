@@ -10,11 +10,13 @@ import {
   Send
 } from 'lucide-react';
 import SendEmailModal from '@/components/ui/SendEmailModal';
+import { useAuth } from '@/lib/auth-context';
 
 export default function CredentialingPage() {
   const [providers, setProviders] = useState<any[]>([]);
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
   const [checklist, setChecklist] = useState<any | null>(null);
+  const { dataMode } = useAuth();
   const [emailModalData, setEmailModalData] = useState<{
     isOpen: boolean;
     email: string;
@@ -23,18 +25,54 @@ export default function CredentialingPage() {
     body: string;
   } | null>(null);
 
+  const demoProviders = [
+    { id: 'p-demo-1', first_name: 'Marcus', last_name: 'Vance', specialty: 'Orthopedic Surgery', readiness_status: 'Ready', readiness_score: 96, npi: '1982049182', email: 'dr.vance@mediflowai.health' },
+    { id: 'p-demo-2', first_name: 'Sarah', last_name: 'Jenkins', specialty: 'Internal Medicine', readiness_status: 'Ready', readiness_score: 92, npi: '1092834710', email: 'dr.jenkins@mediflowai.health' },
+    { id: 'p-demo-3', first_name: 'Alex', last_name: 'Rivera', specialty: 'Cardiology', readiness_status: 'Conditional', readiness_score: 84, npi: '1482910394', email: 'dr.rivera@mediflowai.health' },
+  ];
+
+  const demoChecklist = {
+    provider_name: 'Dr. Marcus Vance',
+    readiness_score: 96,
+    readiness_status: 'Ready',
+    caqh_status: 'Attested & Verified',
+    credentials: [
+      { id: 'cr1', credential_type: 'Texas State Medical License', status: 'Expiring Soon', expiration_date: '2026-04-20', days_until_expiry: 38, is_verified: true },
+      { id: 'cr2', credential_type: 'DEA Registration Certificate', status: 'Active', expiration_date: '2027-08-15', days_until_expiry: 512, is_verified: true },
+      { id: 'cr3', credential_type: 'Board Certification (Orthopedic Surgery)', status: 'Active', expiration_date: '2028-12-31', days_until_expiry: 980, is_verified: true },
+      { id: 'cr4', credential_type: 'Malpractice Liability Insurance ($1M/$3M)', status: 'Active', expiration_date: '2026-11-01', days_until_expiry: 220, is_verified: true }
+    ],
+    payer_enrollments: [
+      { payer_name: 'Medicare Part B (Noridian)', status: 'Enrolled' },
+      { payer_name: 'Blue Cross Blue Shield of Texas', status: 'Enrolled' },
+      { payer_name: 'UnitedHealthcare Commercial', status: 'In Review' },
+      { payer_name: 'Aetna Health Insurance', status: 'Enrolled' }
+    ]
+  };
+
   useEffect(() => {
     api.getProviders().then((data) => {
       setProviders(data);
-      if (data.length > 0) {
-        setSelectedProviderId(data[0].id);
-        loadChecklist(data[0].id);
+      const activeList = data.length > 0 ? data : (dataMode === 'demo' ? demoProviders : []);
+      if (activeList.length > 0) {
+        setSelectedProviderId(activeList[0].id);
+        if (activeList[0].id.startsWith('p-demo')) {
+          setChecklist(demoChecklist);
+        } else {
+          loadChecklist(activeList[0].id);
+        }
       }
     });
-  }, []);
+  }, [dataMode]);
+
+  const activeProvidersList = providers.length > 0 ? providers : (dataMode === 'demo' ? demoProviders : []);
 
   const loadChecklist = (provId: string) => {
-    api.getProviderChecklist(provId).then(setChecklist).catch(console.error);
+    if (provId.startsWith('p-demo')) {
+      setChecklist(demoChecklist);
+    } else {
+      api.getProviderChecklist(provId).then(setChecklist).catch(console.error);
+    }
   };
 
   const handleSelectProvider = (provId: string) => {
@@ -42,7 +80,7 @@ export default function CredentialingPage() {
     loadChecklist(provId);
   };
 
-  const currentProvider = providers.find((p) => p.id === selectedProviderId);
+  const currentProvider = activeProvidersList.find((p) => p.id === selectedProviderId);
 
   const handleOpenLicenseReminder = (cred: any) => {
     const docName = currentProvider ? `Dr. ${currentProvider.first_name} ${currentProvider.last_name}` : 'Doctor';
@@ -75,7 +113,7 @@ export default function CredentialingPage() {
         <div className="bg-[#111827] rounded-3xl border border-slate-800 shadow-sm p-4 space-y-3">
           <span className="text-xs font-bold text-white">Active Doctors</span>
           <div className="space-y-2 max-h-[75vh] overflow-y-auto">
-            {providers.map((p) => {
+            {activeProvidersList.map((p) => {
               const isSelected = selectedProviderId === p.id;
               const docEmail = p.email || `dr.${p.last_name.toLowerCase()}@mediflowai.health`;
 

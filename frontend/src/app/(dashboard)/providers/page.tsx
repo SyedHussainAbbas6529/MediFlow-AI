@@ -4,20 +4,22 @@ import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { Plus, Search, Stethoscope, Mail, Send } from 'lucide-react';
 import SendEmailModal from '@/components/ui/SendEmailModal';
+import { useAuth } from '@/lib/auth-context';
 
 export default function ProvidersPage() {
   const [providers, setProviders] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [emailModalData, setEmailModalData] = useState<{ isOpen: boolean; email: string; name: string } | null>(null);
+  const { dataMode } = useAuth();
 
-  // Form state
-  const [fn, setFn] = useState('');
-  const [ln, setLn] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [npi, setNpi] = useState('');
-  const [specialty, setSpecialty] = useState('Orthopedic Surgery');
+  const demoProviders = [
+    { id: 'prov-1', first_name: 'Marcus', last_name: 'Vance', specialty: 'Orthopedic Surgery', readiness_status: 'Ready', readiness_score: 96, npi: '1982049182', email: 'dr.vance@mediflowai.health', phone: '(555) 304-9182', claims_count: 142 },
+    { id: 'prov-2', first_name: 'Sarah', last_name: 'Jenkins', specialty: 'Internal Medicine', readiness_status: 'Ready', readiness_score: 92, npi: '1092834710', email: 'dr.jenkins@mediflowai.health', phone: '(555) 492-0193', claims_count: 88 },
+    { id: 'prov-3', first_name: 'Alex', last_name: 'Rivera', specialty: 'Cardiology', readiness_status: 'Conditional', readiness_score: 84, npi: '1482910394', email: 'dr.rivera@mediflowai.health', phone: '(555) 782-9012', claims_count: 65 },
+    { id: 'prov-4', first_name: 'Emily', last_name: 'Watson', specialty: 'Pediatrics', readiness_status: 'Ready', readiness_score: 98, npi: '1728394019', email: 'dr.watson@mediflowai.health', phone: '(555) 891-2304', claims_count: 42 },
+    { id: 'prov-5', first_name: 'James', last_name: 'Chen', specialty: 'Dermatology', readiness_status: 'Action Needed', readiness_score: 68, npi: '1839201948', email: 'dr.chen@mediflowai.health', phone: '(555) 671-8923', claims_count: 19 },
+  ];
 
   const load = () => {
     api.getProviders().then(setProviders).catch(console.error);
@@ -25,7 +27,7 @@ export default function ProvidersPage() {
 
   useEffect(() => {
     load();
-  }, []);
+  }, [dataMode]);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,9 +51,11 @@ export default function ProvidersPage() {
     });
   };
 
+  const activeProviders = providers.length > 0 ? providers : (dataMode === 'demo' ? demoProviders : []);
+
   const filtered = search
-    ? providers.filter((p) => `${p.first_name} ${p.last_name}`.toLowerCase().includes(search.toLowerCase()) || p.npi.includes(search) || p.email?.toLowerCase().includes(search.toLowerCase()))
-    : providers;
+    ? activeProviders.filter((p) => `${p.first_name} ${p.last_name}`.toLowerCase().includes(search.toLowerCase()) || p.npi?.includes(search) || p.email?.toLowerCase().includes(search.toLowerCase()))
+    : activeProviders;
 
   return (
     <div className="space-y-6 text-slate-100">

@@ -58,18 +58,59 @@ export default function DashboardPage() {
     );
   }
 
-  const kpis = data.kpis || {
+  const isDemo = dataMode === 'demo';
+
+  // Demo Dataset for Testing
+  const demoKpis = {
+    total_claims: { label: 'Total Claims Sent', value: '300', delta: '+12.4%', sparkline: [40, 55, 60, 78, 85, 92, 105, 120] },
+    claims_billed: { label: 'Total Amount Billed', value: '$245,000', delta: '+8.2%', sparkline: [120000, 145000, 160000, 185000, 210000, 245000] },
+    collections: { label: 'Money Received', value: '$205,000', delta: '+14.6%', sparkline: [95000, 110000, 130000, 155000, 180000, 205000] },
+    denial_rate: { label: 'Denied Claims Rate', value: '4.2%', delta: '-2.1%', sparkline: [7.8, 6.5, 5.9, 5.2, 4.8, 4.2] },
+    ar_outstanding: { label: 'Waiting to be Paid', value: '$39,000', delta: '-5.4%', sparkline: [65000, 58000, 52000, 48000, 42000, 39000] },
+  };
+
+  const demoRevenueOverview = [
+    { month: 'Oct', billed: 145000, collected: 122000, ar_outstanding: 23000 },
+    { month: 'Nov', billed: 162000, collected: 138000, ar_outstanding: 24000 },
+    { month: 'Dec', billed: 178000, collected: 154000, ar_outstanding: 24000 },
+    { month: 'Jan', billed: 195000, collected: 168000, ar_outstanding: 27000 },
+    { month: 'Feb', billed: 210000, collected: 182000, ar_outstanding: 28000 },
+    { month: 'Mar', billed: 245000, collected: 212000, ar_outstanding: 33000 },
+  ];
+
+  const demoClaimsByStatus = [
+    { status: 'Paid', count: 195, percentage: 65, color: '#10B981' },
+    { status: 'In Adjudication', count: 54, percentage: 18, color: '#6366F1' },
+    { status: 'In Review', count: 33, percentage: 11, color: '#F59E0B' },
+    { status: 'Denied', count: 18, percentage: 6, color: '#EF4444' },
+  ];
+
+  const demoProviderAudit = [
+    { id: 'p1', name: 'Dr. Marcus Vance', specialty: 'Orthopedic Surgery', status: 'Ready', score: 96, npi: '1982049182', last_updated: 'Mar 12, 2026' },
+    { id: 'p2', name: 'Dr. Sarah Jenkins', specialty: 'Internal Medicine', status: 'Ready', score: 92, npi: '1092834710', last_updated: 'Mar 10, 2026' },
+    { id: 'p3', name: 'Dr. Alex Rivera', specialty: 'Cardiology', status: 'Conditional', score: 84, npi: '1482910394', last_updated: 'Mar 08, 2026' },
+    { id: 'p4', name: 'Dr. Emily Watson', specialty: 'Pediatrics', status: 'Ready', score: 98, npi: '1728394019', last_updated: 'Mar 05, 2026' },
+    { id: 'p5', name: 'Dr. James Chen', specialty: 'Dermatology', status: 'Action Needed', score: 68, npi: '1839201948', last_updated: 'Mar 01, 2026' },
+  ];
+
+  const demoExpiringSoon = [
+    { id: 'c1', provider_name: 'Dr. Marcus Vance', credential_type: 'Texas State Medical License', expiration_date: '2026-04-20', days_left: 38, urgency: 'high' },
+    { id: 'c2', provider_name: 'Dr. Sarah Jenkins', credential_type: 'DEA Registration Certificate', expiration_date: '2026-05-15', days_left: 64, urgency: 'medium' },
+    { id: 'c3', provider_name: 'Dr. Alex Rivera', credential_type: 'CAQH Attestation Review', expiration_date: '2026-03-30', days_left: 14, urgency: 'high' },
+  ];
+
+  const kpis = isDemo ? demoKpis : (data.kpis || {
     total_claims: { label: 'Total Claims Sent', value: '0', delta: '+0.0%', sparkline: [0, 0, 0, 0, 0, 0] },
     claims_billed: { label: 'Total Amount Billed', value: '$0.00', delta: '+0.0%', sparkline: [0, 0, 0, 0, 0, 0] },
     collections: { label: 'Money Received', value: '$0.00', delta: '+0.0%', sparkline: [0, 0, 0, 0, 0, 0] },
     denial_rate: { label: 'Denied Claims Rate', value: '0.0%', delta: '0.0%', sparkline: [0, 0, 0, 0, 0, 0] },
     ar_outstanding: { label: 'Waiting to be Paid', value: '$0.00', delta: '0.0%', sparkline: [0, 0, 0, 0, 0, 0] },
-  };
+  });
 
-  const revenue_overview = data.revenue_overview || [];
-  const claims_by_status = data.claims_by_status || [];
-  const provider_audit = data.provider_audit || [];
-  const expiring_soon = data.expiring_soon || [];
+  const revenue_overview = isDemo ? demoRevenueOverview : (data.revenue_overview || []);
+  const claims_by_status = isDemo ? demoClaimsByStatus : (data.claims_by_status || []);
+  const provider_audit = isDemo ? demoProviderAudit : (data.provider_audit || []);
+  const expiring_soon = isDemo ? demoExpiringSoon : (data.expiring_soon || []);
   const quick_prompts = data.quick_prompts || [];
 
   const SIMPLE_LABELS: Record<string, { title: string; subtitle: string; icon: any }> = {
@@ -86,17 +127,25 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-0.5 rounded-full border bg-emerald-950/80 text-emerald-300 border-emerald-800">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              Live Practice Operations (Clean State)
+            <span className={`flex items-center gap-1.5 text-[11px] font-bold px-3 py-0.5 rounded-full border ${
+              isDemo
+                ? 'bg-amber-950/80 text-amber-300 border-amber-800'
+                : 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
+            }`}>
+              <span className={`w-2 h-2 rounded-full ${isDemo ? 'bg-amber-400' : 'bg-emerald-400'} animate-pulse`} />
+              {isDemo ? 'Demo Mode (Sample Testing Data Active)' : 'Live Practice Operations (Clean State)'}
             </span>
-            <span className="text-xs text-slate-400">HIPAA Secure • Real Data Mode</span>
+            <span className="text-xs text-slate-400">
+              {isDemo ? 'Interactive Sandbox' : 'HIPAA Secure • Real Data'}
+            </span>
           </div>
           <h1 className="text-2xl font-black text-white tracking-tight">
             Practice Overview & Billing Center
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Real-time practice records, claim processing metrics, and clinical revenue cycle.
+            {isDemo
+              ? 'Viewing realistic sample testing dataset. Click the top-right toggle to switch to your live clean database.'
+              : 'Real-time practice records, claim processing metrics, and clinical revenue cycle.'}
           </p>
         </div>
 

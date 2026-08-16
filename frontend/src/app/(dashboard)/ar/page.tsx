@@ -10,6 +10,7 @@ import {
   Mail
 } from 'lucide-react';
 import SendEmailModal from '@/components/ui/SendEmailModal';
+import { useAuth } from '@/lib/auth-context';
 
 export default function ARFollowupPage() {
   const [summary, setSummary] = useState<any>(null);
@@ -18,6 +19,7 @@ export default function ARFollowupPage() {
   const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
   const [scriptModal, setScriptModal] = useState<boolean>(false);
   const [generatedScript, setGeneratedScript] = useState<any | null>(null);
+  const { dataMode } = useAuth();
   const [emailModalData, setEmailModalData] = useState<{
     isOpen: boolean;
     email: string;
@@ -26,17 +28,85 @@ export default function ARFollowupPage() {
     body: string;
   } | null>(null);
 
+  const demoSummary = {
+    total_ar: 39000.00,
+    buckets: {
+      '0-30': { amount: 18000.00, count: 24, percentage: 46 },
+      '31-60': { amount: 12000.00, count: 14, percentage: 31 },
+      '61-90': { amount: 6000.00, count: 6, percentage: 15 },
+      '90+': { amount: 3000.00, count: 3, percentage: 8 }
+    }
+  };
+
+  const demoFollowups = [
+    {
+      id: 'ar-demo-001',
+      claim_number: 'CLM-2026-9041',
+      patient_name: 'Eleanor Vance',
+      payer_name: 'Medicare Part B (Noridian)',
+      outstanding_amount: 1250.00,
+      days_outstanding: 42,
+      aging_bucket: '31-60',
+      priority: 'high',
+      status: 'pending'
+    },
+    {
+      id: 'ar-demo-002',
+      claim_number: 'CLM-2026-8812',
+      patient_name: 'Robert Garcia',
+      payer_name: 'Blue Cross Blue Shield of Texas',
+      outstanding_amount: 850.00,
+      days_outstanding: 18,
+      aging_bucket: '0-30',
+      priority: 'medium',
+      status: 'pending'
+    },
+    {
+      id: 'ar-demo-003',
+      claim_number: 'CLM-2026-6621',
+      patient_name: 'Lucas Bennett',
+      payer_name: 'UnitedHealthcare Commercial',
+      outstanding_amount: 450.00,
+      days_outstanding: 74,
+      aging_bucket: '61-90',
+      priority: 'high',
+      status: 'pending'
+    },
+    {
+      id: 'ar-demo-004',
+      claim_number: 'CLM-2026-5510',
+      patient_name: 'Sophia Martinez',
+      payer_name: 'Aetna Health',
+      outstanding_amount: 1800.00,
+      days_outstanding: 98,
+      aging_bucket: '90+',
+      priority: 'urgent',
+      status: 'escalated'
+    }
+  ];
+
   useEffect(() => {
     api.getARSummary().then(setSummary).catch(console.error);
     api.getARFollowups().then(setFollowups).catch(console.error);
-  }, []);
+  }, [dataMode]);
+
+  const activeSummary = summary?.total_ar ? summary : (dataMode === 'demo' ? demoSummary : (summary || { total_ar: 0, buckets: {} }));
+  const activeFollowups = followups.length > 0 ? followups : (dataMode === 'demo' ? demoFollowups : []);
 
   const handleGenerateScript = async (rec: any) => {
     setSelectedRecord(rec);
     try {
-      const res = await api.generateARScript(rec.id);
-      setGeneratedScript(res);
-      setScriptModal(true);
+      if (rec.id.startsWith('ar-demo')) {
+        setGeneratedScript({
+          script_text: `Payer Call Script for Claim #${rec.claim_number}\nPayer: ${rec.payer_name}\nOutstanding: $${rec.outstanding_amount}\n\n1. State: "Hello, I am calling from Apex Medical Practice regarding Claim #${rec.claim_number} for patient ${rec.patient_name}."\n2. Inquire: "Our records indicate this claim has been pending adjudication for ${rec.days_outstanding} days. Has electronic payment been scheduled?"\n3. Record reference number and operator name.`,
+          phone_number: '1-800-633-4227'
+        });
+        setScriptModal(true);
+      } else {
+        const res = await api.generateARScript(rec.id);
+        setGeneratedScript(res);
+        setScriptModal(true);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -54,8 +124,8 @@ export default function ARFollowupPage() {
   };
 
   const filteredFollowups = activeBucket === 'All'
-    ? followups
-    : followups.filter((f) => f.aging_bucket.includes(activeBucket));
+    ? activeFollowups
+    : activeFollowups.filter((f) => f.aging_bucket.includes(activeBucket));
 
   return (
     <div className="space-y-6 text-slate-100">

@@ -7,8 +7,8 @@ import {
   Search,
   CheckCircle2,
   Eye
-} from 'lucide-react';
 import ScrubbingReviewModal from '@/components/ai/ScrubbingReviewModal';
+import { useAuth } from '@/lib/auth-context';
 
 export default function BillingPage() {
   const [claims, setClaims] = useState<any[]>([]);
@@ -17,6 +17,58 @@ export default function BillingPage() {
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const { dataMode } = useAuth();
+
+  const demoClaims = [
+    {
+      id: 'demo-c1',
+      claim_number: 'CLM-2026-9041',
+      patient_name: 'Eleanor Vance',
+      provider_name: 'Dr. Marcus Vance',
+      payer_name: 'Medicare Part B (Noridian)',
+      total_charge: 1250.00,
+      date_of_service: '2026-03-12',
+      status: 'Ready for Review',
+      medical_necessity_score: 94,
+      scrub_status: 'Passed'
+    },
+    {
+      id: 'demo-c2',
+      claim_number: 'CLM-2026-8812',
+      patient_name: 'Robert Garcia',
+      provider_name: 'Dr. Sarah Jenkins',
+      payer_name: 'Blue Cross Blue Shield of Texas',
+      total_charge: 850.00,
+      date_of_service: '2026-03-10',
+      status: 'Submitted',
+      medical_necessity_score: 98,
+      scrub_status: 'Passed'
+    },
+    {
+      id: 'demo-c3',
+      claim_number: 'CLM-2026-7734',
+      patient_name: 'Margaret Thatcher',
+      provider_name: 'Dr. Alex Rivera',
+      payer_name: 'Aetna Health Insurance',
+      total_charge: 2400.00,
+      date_of_service: '2026-03-08',
+      status: 'Paid',
+      medical_necessity_score: 95,
+      scrub_status: 'Passed'
+    },
+    {
+      id: 'demo-c4',
+      claim_number: 'CLM-2026-6621',
+      patient_name: 'Lucas Bennett',
+      provider_name: 'Dr. Emily Watson',
+      payer_name: 'UnitedHealthcare Commercial',
+      total_charge: 450.00,
+      date_of_service: '2026-03-05',
+      status: 'Denied',
+      medical_necessity_score: 72,
+      scrub_status: 'Failed'
+    },
+  ];
 
   const loadClaims = () => {
     setIsLoading(true);
@@ -30,9 +82,11 @@ export default function BillingPage() {
     loadClaims();
   }, [statusFilter]);
 
-  const filteredClaims = search
-    ? claims.filter((c) => c.claim_number.toLowerCase().includes(search.toLowerCase()) || c.patient_name?.toLowerCase().includes(search.toLowerCase()))
-    : claims;
+  const activeClaimsList = claims.length > 0 ? claims : (dataMode === 'demo' ? demoClaims : []);
+
+  const filteredClaims = activeClaimsList
+    .filter((c) => statusFilter === 'All' || c.status === statusFilter)
+    .filter((c) => !search || c.claim_number.toLowerCase().includes(search.toLowerCase()) || c.patient_name?.toLowerCase().includes(search.toLowerCase()));
 
   const handleOpenScrub = (claim: any) => {
     setSelectedClaim(claim);

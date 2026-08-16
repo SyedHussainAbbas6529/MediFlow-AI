@@ -7,22 +7,60 @@ import {
   FileCheck,
   Sparkles,
   BookOpen
-} from 'lucide-react';
 import AiTextEditor from '@/components/ai/AiTextEditor';
+import { useAuth } from '@/lib/auth-context';
 
 export default function DenialsPage() {
   const [denials, setDenials] = useState<any[]>([]);
   const [selectedDenial, setSelectedDenial] = useState<any | null>(null);
   const [appealData, setAppealData] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { dataMode } = useAuth();
+
+  const demoDenials = [
+    {
+      id: 'den-demo-001',
+      claim_number: 'CLM-2026-9041',
+      patient_name: 'Eleanor Vance',
+      payer_name: 'Medicare Part B (Noridian MAC)',
+      total_charge: 1250.00,
+      denial_code: 'CO-50',
+      denial_reason: 'Non-covered service: medical necessity criteria not met according to payer LCD L33777.',
+      status: 'Appeal Drafted',
+      deadline_days: 45
+    },
+    {
+      id: 'den-demo-002',
+      claim_number: 'CLM-2026-6621',
+      patient_name: 'Lucas Bennett',
+      payer_name: 'UnitedHealthcare Commercial',
+      total_charge: 450.00,
+      denial_code: 'CO-16',
+      denial_reason: 'Claim lacks valid prior-authorization number or referral code from primary care.',
+      status: 'Action Required',
+      deadline_days: 28
+    },
+    {
+      id: 'den-demo-003',
+      claim_number: 'CLM-2026-5510',
+      patient_name: 'Sophia Martinez',
+      payer_name: 'Blue Cross Blue Shield of Texas',
+      total_charge: 680.00,
+      denial_code: 'CO-97',
+      denial_reason: 'Payment adjusted because this procedure is included in the primary surgical service.',
+      status: 'Ready for Review',
+      deadline_days: 60
+    }
+  ];
 
   const loadDenials = () => {
     setIsLoading(true);
     api.getDenials()
       .then((data) => {
         setDenials(data);
-        if (data.length > 0 && !selectedDenial) {
-          handleSelectDenial(data[0]);
+        const activeList = data.length > 0 ? data : (dataMode === 'demo' ? demoDenials : []);
+        if (activeList.length > 0 && !selectedDenial) {
+          handleSelectDenial(activeList[0]);
         }
       })
       .catch(console.error)
@@ -31,13 +69,26 @@ export default function DenialsPage() {
 
   useEffect(() => {
     loadDenials();
-  }, []);
+  }, [dataMode]);
+
+  const activeDenialsList = denials.length > 0 ? denials : (dataMode === 'demo' ? demoDenials : []);
 
   const handleSelectDenial = async (denial: any) => {
     setSelectedDenial(denial);
     try {
-      const appeal = await api.draftAppeal(denial.id);
-      setAppealData(appeal);
+      if (denial.id.startsWith('den-demo')) {
+        setAppealData({
+          denial_id: denial.id,
+          denial_code: denial.denial_code,
+          denial_reason: denial.denial_reason,
+          appeal_letter_text: `Re: Level 1 Appeal for Claim #${denial.claim_number}\nPatient: ${denial.patient_name}\nPayer: ${denial.payer_name}\n\nDear Claims Appeals Department,\n\nWe are formally appealing the denial of Claim #${denial.claim_number} issued under Denial Code ${denial.denial_code} (${denial.denial_reason}).\n\nClinical Justification:\nThe treatment provided was medically necessary and met all diagnostic coverage criteria as documented in the attached clinical progress notes and operative records.\n\nPlease re-adjudicate this claim for full payment in accordance with published guidelines.\n\nSincerely,\nDr. Marcus Vance, MD\nApex Medical Healthcare`,
+          cited_policy_title: 'Medicare LCD L33777 - Joint Injections & Conservative Care',
+          status: 'Drafted'
+        });
+      } else {
+        const appeal = await api.draftAppeal(denial.id);
+        setAppealData(appeal);
+      }
     } catch (err) {
       console.error('Appeal draft error:', err);
     }
@@ -62,12 +113,12 @@ export default function DenialsPage() {
           <div className="flex items-center justify-between pb-2 border-b border-slate-800">
             <span className="text-xs font-bold text-white">Denied Claims Queue</span>
             <span className="text-[10px] font-bold text-red-400 bg-red-950/80 px-2 py-0.5 rounded-full border border-red-900/60">
-              {denials.length} Pending
+              {activeDenialsList.length} Pending
             </span>
           </div>
 
           <div className="space-y-2 max-h-[75vh] overflow-y-auto">
-            {denials.map((d) => {
+            {activeDenialsList.map((d) => {
               const isSelected = selectedDenial?.id === d.id;
               return (
                 <div
