@@ -9,7 +9,7 @@ class LoginRequest(BaseModel):
     totp_code: Optional[str] = None
 
 class RegisterOrgRequest(BaseModel):
-    organization_name: str
+    organization_name: Optional[str] = None
     full_name: str
     email: EmailStr
     password: str

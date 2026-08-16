@@ -19,9 +19,10 @@ async def register_organization(payload: RegisterOrgRequest, db: AsyncSession = 
         raise HTTPException(status_code=400, detail="User with this email already registered")
         
     # 1. Create Organization
-    org_slug = payload.organization_name.lower().replace(" ", "-").replace(".", "")
+    org_name = payload.organization_name if payload.organization_name else f"{payload.full_name}'s Practice"
+    org_slug = org_name.lower().replace(" ", "-").replace(".", "").replace("'", "")[:40]
     org = Organization(
-        name=payload.organization_name,
+        name=org_name,
         slug=org_slug,
         phone=payload.phone,
         email=payload.email
