@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  backend:
+    image: ghcr.io/mediflowai/backend:latest
+    environment:
+      DATABASE_URL: ${MANAGED_DATABASE_URL}
+      REDIS_URL: ${MANAGED_REDIS_URL}
+      STORAGE_TYPE: s3
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_STORAGE_BUCKET_NAME: ${AWS_STORAGE_BUCKET_NAME}
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      SECRET_KEY: ${SECRET_KEY}
+      ZERO_DATA_RETENTION: "true"
+    ports:
+      - "8000:8000"
+
+  worker:
+    image: ghcr.io/mediflowai/backend:latest
+    command: celery -A app.workers.celery_app.celery_app worker -B --loglevel=info
+    environment:
+      DATABASE_URL: ${MANAGED_DATABASE_URL}
+      REDIS_URL: ${MANAGED_REDIS_URL}
+
+  frontend:
+    image: ghcr.io/mediflowai/frontend:latest
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: https://api.mediflowai.com/api/v1
+      NEXT_PUBLIC_WS_URL: wss://api.mediflowai.com/ws/notifications
+    ports:
+      - "3000:3000"

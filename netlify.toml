@@ -1,0 +1,21 @@
+# Netlify Configuration for MediFlow AI Frontend (Next.js App Router)
+
+[build]
+  base = "frontend"
+  publish = ".next"
+  command = "npm run build"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_FLAGS = "--legacy-peer-deps"
+
+# Optional: Proxy API calls to your hosted FastAPI backend
+# Uncomment and replace with your live FastAPI backend URL (e.g., on Render/Railway)
+# [[redirects]]
+#   from = "/api/v1/*"
+#   to = "https://your-backend-app.onrender.com/api/v1/:splat"
+#   status = 200
+#   force = true
