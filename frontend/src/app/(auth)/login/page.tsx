@@ -5,41 +5,32 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import ParticleCanvas from '@/components/canvas/ParticleCanvas';
-import {
-  ArrowRight,
-  ShieldCheck,
-  Lock,
-  Mail,
-  CheckCircle2,
-  Eye,
-  EyeOff,
-  Laptop
-} from 'lucide-react';
+import { Mail, Lock, ArrowRight, Eye, EyeOff, ShieldCheck, Laptop } from 'lucide-react';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('admin@mediflowai.health');
-  const [password, setPassword] = useState('Password123!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberDevice, setRememberDevice] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login, switchRole, user } = useAuth();
+  const { login } = useAuth();
   const router = useRouter();
 
+  // Check if device is already remembered
   useEffect(() => {
-    // If device is remembered or active session exists, go straight to dashboard
     const isRemembered = localStorage.getItem('mediflow_remember_device');
-    const savedUser = localStorage.getItem('mediflow_user');
-    if (isRemembered === 'true' && savedUser) {
+    const savedToken = localStorage.getItem('mediflow_token');
+    if (isRemembered === 'true' && savedToken) {
       router.replace('/dashboard');
     }
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     setIsLoading(true);
-    setError(null);
+
     try {
       if (rememberDevice) {
         localStorage.setItem('mediflow_remember_device', 'true');
@@ -47,56 +38,26 @@ export default function LoginPage() {
         localStorage.removeItem('mediflow_remember_device');
       }
       await login(email, password);
+      router.push('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Invalid credentials or authentication error.');
+      setError(err.message || 'Invalid email or password. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleQuickDemoRole = async (roleSlug: string) => {
-    localStorage.setItem('mediflow_remember_device', 'true');
-    await switchRole(roleSlug);
-    router.push('/dashboard');
-  };
-
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-6 overflow-hidden bg-[#090D16] text-slate-100 bg-medical-grid selection:bg-sky-500 selection:text-white">
-      <ParticleCanvas />
+    <div className="min-h-screen bg-[#090D16] bg-medical-grid flex items-center justify-center p-4 selection:bg-sky-500 selection:text-white">
+      <div className="w-full max-w-md bg-[#111827] rounded-3xl p-6 sm:p-8 border border-slate-800/80 shadow-2xl relative overflow-hidden">
+        {/* Subtle Background Glow */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-sky-500/5 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Floating Badges */}
-      <div className="hidden lg:block absolute left-12 top-24 z-10 p-4 bg-[#111827]/90 backdrop-blur-xl rounded-3xl border border-sky-900/40 shadow-card animate-float">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-sky-950/80 text-sky-400 flex items-center justify-center font-bold border border-sky-800/40">
-            <CheckCircle2 className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-xs font-bold text-white">99.8% Claims Approved</p>
-            <p className="text-[10px] text-slate-400">Automatic Rule & Error Check</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="hidden lg:block absolute right-12 bottom-24 z-10 p-4 bg-[#111827]/90 backdrop-blur-xl rounded-3xl border border-sky-900/40 shadow-card animate-float" style={{ animationDelay: '2s' }}>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-indigo-950/80 text-indigo-400 flex items-center justify-center font-bold border border-indigo-800/40">
-            <ShieldCheck className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-xs font-bold text-white">Protected & Encrypted</p>
-            <p className="text-[10px] text-slate-400">HIPAA Safe Data Storage</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Login Card */}
-      <div className="relative z-10 w-full max-w-md bg-[#111827]/90 backdrop-blur-2xl rounded-4xl p-8 shadow-2xl border border-sky-900/50">
-        {/* Brand with Generated Logo */}
+        {/* Logo & Header */}
         <div className="flex flex-col items-center text-center mb-8">
-          <div className="relative w-16 h-16 rounded-3xl overflow-hidden shadow-xl shadow-sky-500/25 mb-3 border border-sky-500/40 bg-[#090D16] flex items-center justify-center">
+          <div className="relative w-16 h-16 rounded-3xl overflow-hidden shadow-xl shadow-sky-500/20 border border-sky-500/30 flex items-center justify-center bg-[#090D16] mb-4">
             <Image
               src="/logo.png"
-              alt="MediFlow AI"
+              alt="MediFlow AI Logo"
               width={64}
               height={64}
               className="object-cover"
@@ -107,12 +68,12 @@ export default function LoginPage() {
             MediFlow <span className="text-sky-400">AI</span>
           </h1>
           <p className="text-xs font-medium text-slate-400 mt-1">
-            Clinical Billing & Doctor License Center
+            Clinical Billing & Revenue Cycle Management
           </p>
         </div>
 
         {error && (
-          <div className="mb-4 p-3.5 rounded-2xl bg-red-950/60 text-red-300 text-xs font-semibold border border-red-900/60">
+          <div className="mb-4 p-3.5 rounded-2xl bg-red-950/60 text-red-300 text-xs font-semibold border border-red-900/60 animate-in fade-in duration-150">
             {error}
           </div>
         )}
@@ -129,7 +90,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@mediflowai.health"
+                placeholder="doctor@practice.health"
                 className="w-full pl-10 pr-4 py-2.5 bg-[#0D1322] border border-slate-700/80 rounded-2xl text-xs text-white placeholder-slate-500 outline-hidden focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500"
                 required
               />
@@ -176,7 +137,7 @@ export default function LoginPage() {
                 Remember this device (Stay logged in)
               </span>
               <span className="text-[10px] text-slate-400 block mt-0.5 leading-tight">
-                Automatically opens your dashboard next time without typing passwords repeatedly.
+                Keeps your session active on this device.
               </span>
             </label>
           </div>
@@ -192,41 +153,22 @@ export default function LoginPage() {
             disabled={isLoading}
             className="w-full py-3 bg-gradient-to-r from-sky-500 via-indigo-600 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 disabled:opacity-50 text-white rounded-2xl text-xs font-bold shadow-lg shadow-sky-500/25 active:scale-95 transition-all flex items-center justify-center gap-2"
           >
-            <span>{isLoading ? 'Signing In...' : 'Sign In to Portal'}</span>
+            <span>{isLoading ? 'Signing In...' : 'Sign In to Practice Portal'}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>
 
-        {/* Quick One-Click Demo Role Switcher */}
-        <div className="mt-8 pt-6 border-t border-slate-800">
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center mb-3">
-            Instant One-Click Demo Logins
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              { label: 'Super Admin', role: 'super_admin' },
-              { label: 'Billing Manager', role: 'billing_manager' },
-              { label: 'Medical Biller', role: 'medical_biller' },
-              { label: 'License Specialist', role: 'credentialing_specialist' },
-              { label: 'Payment Collector', role: 'ar_specialist' },
-              { label: 'View Only', role: 'viewer' },
-            ].map((r) => (
-              <button
-                key={r.role}
-                onClick={() => handleQuickDemoRole(r.role)}
-                className="px-2.5 py-2 bg-[#0D1322] hover:bg-sky-950/60 text-slate-300 hover:text-sky-400 text-[11px] font-semibold rounded-xl border border-slate-800 hover:border-sky-700/60 transition-all truncate"
-              >
-                {r.label}
-              </button>
-            ))}
-          </div>
+        <div className="mt-8 text-center text-xs text-slate-400">
+          New clinical practice?{' '}
+          <Link href="/signup" className="text-sky-400 font-bold hover:underline">
+            Register Practice Account
+          </Link>
         </div>
 
-        <div className="mt-6 text-center text-xs text-slate-400">
-          Don&apos;t have an account?{' '}
-          <Link href="/signup" className="text-sky-400 font-bold hover:underline">
-            Register New Account
-          </Link>
+        {/* HIPAA Safe Footer Badge */}
+        <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-center gap-2 text-slate-400 text-[11px]">
+          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+          <span>HIPAA Compliant • 256-Bit Encrypted Portal</span>
         </div>
       </div>
     </div>

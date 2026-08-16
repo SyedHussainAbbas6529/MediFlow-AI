@@ -1,7 +1,6 @@
 import asyncio
 import datetime
 import uuid
-import random
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -9,10 +8,8 @@ from app.core.database import AsyncSessionLocal, engine, Base
 from app.core.security import get_password_hash
 from app.models.entities import (
     Organization, User, Role, Permission, RolePermission,
-    Patient, Provider, ProviderCredential, ProviderDocument,
-    Payer, PayerPolicy, Claim, ClaimLine, Denial, Appeal,
-    ARFollowup, Document, DocumentChunk, AuditLog, Notification,
-    Task, IntegrationConnection, Subscription
+    Payer, PayerPolicy, Document, DocumentChunk,
+    IntegrationConnection, Subscription
 )
 from app.services.vector_service import vector_search_service
 
@@ -25,19 +22,19 @@ async def seed_database():
         # Check if already seeded
         org_check = await db.execute(select(Organization).limit(1))
         if org_check.scalar_one_or_none():
-            print("Database already contains data. Skipping initial seeding.")
+            print("Database already contains structure. Skipping initial seeding.")
             return
 
-        print("[SEEDING] Seeding MediFlow AI production-grade database with realistic clinical & RCM data...")
+        print("[CLEAN PRODUCTION SEEDING] Initializing clean production database structure (Zero Sample Data)...")
 
-        # 1. Organization
+        # 1. Clean Organization
         org = Organization(
-            id="org-demo-001",
-            name="MediFlow Healthcare Solutions",
-            slug="mediflow-health",
+            id="org-prod-001",
+            name="Apex Medical Practice",
+            slug="apex-medical",
             tax_id="74-9823412",
             phone="+1 (800) 555-0199",
-            email="ops@mediflowai.health",
+            email="admin@apexmedical.health",
             address="450 Medical Center Blvd, Suite 800, Austin, TX 78701"
         )
         db.add(org)
@@ -101,8 +98,8 @@ async def seed_database():
         for slug, name, module, desc in permissions_data:
             p = Permission(
                 id=f"perm-{slug.replace('.', '-')}",
-                slug=slug,
                 name=name,
+                slug=slug,
                 module=module,
                 description=desc
             )
@@ -113,46 +110,43 @@ async def seed_database():
 
         # Map All Permissions to Super Admin and Admin
         for p in perm_objs:
-            db.add(RolePermission(role_id=role_map["super_admin"].id, permission_id=p.id))
-            db.add(RolePermission(role_id=role_map["admin"].id, permission_id=p.id))
+            rp_super = RolePermission(role_id=role_map["super_admin"].id, permission_id=p.id)
+            rp_admin = RolePermission(role_id=role_map["admin"].id, permission_id=p.id)
+            db.add(rp_super)
+            db.add(rp_admin)
             
-            # Map Biller permissions
-            if p.module in ["claims", "denials", "patients", "ar"] and not p.slug.endswith("approve"):
-                db.add(RolePermission(role_id=role_map["medical_biller"].id, permission_id=p.id))
-            # Map Billing Manager
+            # Billing Manager permissions
             if p.module in ["claims", "denials", "patients", "ar", "audit"]:
                 db.add(RolePermission(role_id=role_map["billing_manager"].id, permission_id=p.id))
-            # Map Credentialing Specialist
-            if p.module in ["credentialing", "patients"]:
+            # Medical Biller permissions
+            if p.module in ["claims", "denials", "patients"]:
+                db.add(RolePermission(role_id=role_map["medical_biller"].id, permission_id=p.id))
+            # Credentialing Specialist permissions
+            if p.module in ["credentialing", "audit"]:
                 db.add(RolePermission(role_id=role_map["credentialing_specialist"].id, permission_id=p.id))
-            # Map Viewer (Read only)
-            if p.slug.endswith(".view"):
+            # AR Specialist permissions
+            if p.module in ["ar", "denials", "patients"]:
+                db.add(RolePermission(role_id=role_map["ar_specialist"].id, permission_id=p.id))
+            # Viewer permissions
+            if "view" in p.slug:
                 db.add(RolePermission(role_id=role_map["viewer"].id, permission_id=p.id))
+                
+        await db.flush()
 
-        # 4. Seed Users
-        demo_users = [
-            ("admin@mediflowai.health", "Dr. Alexander Vance", "super_admin"),
-            ("billing.mgr@mediflowai.health", "Sarah Sterling", "billing_manager"),
-            ("biller@mediflowai.health", "David Kim", "medical_biller"),
-            ("cred.spec@mediflowai.health", "Rachel Adams", "credentialing_specialist"),
-            ("ar.spec@mediflowai.health", "Michael Torres", "ar_specialist"),
-            ("doctor@mediflowai.health", "Dr. Marcus Vance", "provider"),
-            ("viewer@mediflowai.health", "Audit Auditor", "viewer"),
-        ]
-        
-        for email, full_name, role_slug in demo_users:
-            u = User(
-                organization_id=org.id,
-                email=email,
-                hashed_password=get_password_hash("Password123!"),
-                full_name=full_name,
-                role_id=role_map[role_slug].id,
-                is_verified=True,
-                is_active=True
-            )
-            db.add(u)
+        # 4. Create Initial Administrator Account for Real Practice Owner
+        admin_user = User(
+            id="user-admin-001",
+            organization_id=org.id,
+            email="admin@mediflowai.health",
+            hashed_password=get_password_hash("Password123!"),
+            full_name="Dr. Alexander Vance",
+            role_id=role_map["super_admin"].id,
+            is_verified=True,
+            is_active=True
+        )
+        db.add(admin_user)
 
-        # 5. Seed Payers
+        # 5. Standard Insurance Payers
         payers_data = [
             ("Medicare Part B (Noridian MAC)", "MEDICARE_B_NORIDIAN", "medicare", "MAC Region J", "1-800-633-4227"),
             ("Medicare Part B (Novitas MAC)", "MEDICARE_B_NOVITAS", "medicare", "MAC Region L", "1-800-633-4227"),
@@ -182,7 +176,7 @@ async def seed_database():
             
         await db.flush()
 
-        # 6. Seed Payer Policy Library (NCD, LCD, Private Policies)
+        # 6. Standard Payer Coding Guidelines (LCD / NCD rules for AI Scrubber)
         policies_data = [
             (
                 payer_objs[0].id, payer_objs[0].name, "medicare", "MAC Region J", "LCD", "L33777",
@@ -203,12 +197,6 @@ async def seed_database():
                 ["99213", "99214", "99381", "99391", "Z00.129"]
             ),
             (
-                payer_objs[4].id, payer_objs[4].name, "tricare", "TRICARE East", "medical_policy", "TRI-POL-890",
-                "TRICARE Physical Therapy & Rehabilitation Authorization",
-                "Pre-authorization requirements after initial 8 outpatient physical therapy visits for active duty dependents and retirees.",
-                ["97110", "97140", "M54.5", "S83.511A"]
-            ),
-            (
                 payer_objs[5].id, payer_objs[5].name, "private", "Texas / National", "medical_policy", "BCBS-CLIN-102",
                 "Spinal MRI Pre-Authorization & Conservative Care Requirements",
                 "Lumbar and cervical spinal MRI coverage rules requiring documentation of radicular pain and failed physical therapy unless red-flag neurological deficits present.",
@@ -222,7 +210,6 @@ async def seed_database():
             )
         ]
 
-        policy_objs = []
         for p_id, p_name, p_type, jur, pol_type, pol_num, title, desc, codes in policies_data:
             pol = PayerPolicy(
                 organization_id=org.id,
@@ -240,11 +227,10 @@ async def seed_database():
                 is_active=True
             )
             db.add(pol)
-            policy_objs.append(pol)
             
         await db.flush()
 
-        # 7. Seed Knowledge Base Documents & Vector Chunks
+        # 7. Standard Knowledge Base Documents & Vector Chunks for Policy Engine
         doc_samples = [
             ("Medicare Part B LCD L33777 - Major Joint Injections", "Payer Policy", payer_objs[0].id, [
                 "CMS MAC Region J LCD L33777 defines coverage indications for CPT 20610 (Arthrocentesis, major joint). Primary indication requires documented radiographic confirmation of grade II-IV osteoarthritis of the knee.",
@@ -278,7 +264,7 @@ async def seed_database():
                 page_count=len(chunks_text),
                 ocr_status="Completed",
                 chunk_count=len(chunks_text),
-                citations_count=random.randint(5, 24)
+                citations_count=5
             )
             db.add(doc)
             await db.flush()
@@ -296,341 +282,38 @@ async def seed_database():
                 )
                 db.add(c_obj)
 
-        # 8. Seed 15 Providers with Full Credential Checklists
-        providers_data = [
-            ("Marcus", "Vance", "1841392019", "Orthopedic Surgery", "Ready", 98),
-            ("Sarah", "Jenkins", "1952403120", "Internal Medicine", "Ready", 95),
-            ("Alex", "Rivera", "1483920194", "Cardiovascular Disease", "Conditional", 82),
-            ("Elena", "Rostova", "1739201842", "Neurology", "Ready", 94),
-            ("Jonathan", "Hayes", "1629401833", "Family Medicine", "Ready", 96),
-            ("Claire", "Bennett", "1548392011", "Dermatology", "Conditional", 78),
-            ("David", "O'Connor", "1839201945", "Pulmonology", "Ready", 92),
-            ("Sophia", "Chen", "1928301944", "Pediatrics", "Ready", 97),
-            ("William", "Sterling", "1472849102", "General Surgery", "Not Ready", 58),
-            ("Olivia", "Taylor", "1839402811", "Rheumatology", "Ready", 93),
-            ("Lucas", "Moretti", "1593820194", "Gastroenterology", "Ready", 91),
-            ("Hannah", "Kim", "1649201844", "Endocrinology", "Ready", 95),
-            ("Benjamin", "Patel", "1729401822", "Pain Medicine", "Conditional", 80),
-            ("Grace", "Morrison", "1859302811", "Ophthalmology", "Ready", 96),
-            ("Daniel", "Zhang", "1948201833", "Urology", "Ready", 94),
-        ]
-
-        provider_objs = []
-        for fn, ln, npi, spec, status, score in providers_data:
-            prov = Provider(
-                organization_id=org.id,
-                first_name=fn,
-                last_name=ln,
-                npi=npi,
-                taxonomy_code="207X00000X",
-                specialty=spec,
-                email=f"dr.{ln.lower()}@mediflowai.health",
-                phone="+1 (512) 555-0144",
-                caqh_number=str(random.randint(1200000, 9900000)),
-                readiness_status=status,
-                readiness_score=score,
-                last_audit_date=datetime.datetime.utcnow() - datetime.timedelta(days=random.randint(2, 30))
-            )
-            db.add(prov)
-            provider_objs.append(prov)
-            
-        await db.flush()
-
-        # Seed credentials for all providers
-        for p in provider_objs:
-            # 1. State License
-            lic_days = 320 if p.readiness_status == "Ready" else (28 if p.readiness_status == "Conditional" else -12)
-            lic_status = "Active" if lic_days > 60 else ("Expiring Soon" if lic_days > 0 else "Expired")
-            db.add(ProviderCredential(
-                organization_id=org.id,
-                provider_id=p.id,
-                credential_type="State Medical License (TX)",
-                credential_number=f"MD-{p.npi[-6:]}",
-                issuing_authority="Texas Medical Board",
-                expiration_date=(datetime.date.today() + datetime.timedelta(days=lic_days)).isoformat(),
-                status=lic_status,
-                days_until_expiry=lic_days,
-                verification_notes="Verified via Texas Medical Board primary source database."
-            ))
-            
-            # 2. DEA
-            dea_days = 280 if p.readiness_status != "Not Ready" else 14
-            db.add(ProviderCredential(
-                organization_id=org.id,
-                provider_id=p.id,
-                credential_type="DEA Certificate",
-                credential_number=f"BD{p.npi[-7:]}",
-                issuing_authority="US Drug Enforcement Administration",
-                expiration_date=(datetime.date.today() + datetime.timedelta(days=dea_days)).isoformat(),
-                status="Active" if dea_days > 60 else "Expiring Soon",
-                days_until_expiry=dea_days
-            ))
-            
-            # 3. CAQH
-            db.add(ProviderCredential(
-                organization_id=org.id,
-                provider_id=p.id,
-                credential_type="CAQH Re-Attestation",
-                credential_number=p.caqh_number,
-                issuing_authority="CAQH ProView",
-                expiration_date=(datetime.date.today() + datetime.timedelta(days=75)).isoformat(),
-                status="Active",
-                days_until_expiry=75
-            ))
-            
-            # 4. Malpractice
-            db.add(ProviderCredential(
-                organization_id=org.id,
-                provider_id=p.id,
-                credential_type="Malpractice Insurance ($1M/$3M)",
-                credential_number=f"POL-MED-{random.randint(1000, 9999)}",
-                issuing_authority="The Doctors Company",
-                expiration_date="2026-12-31",
-                status="Active",
-                days_until_expiry=300
-            ))
-
-        # 9. Seed 50 Patients
-        first_names = ["Eleanor", "Arthur", "Beatrix", "Clara", "Dorothy", "Evelyn", "Felix", "George", "Henry", "Iris",
-                       "Jasper", "Leona", "Milo", "Nora", "Oliver", "Penelope", "Quinn", "Rosa", "Silas", "Theodore",
-                       "Violet", "Winston", "Xavier", "Yvonne", "Zachary", "Abigail", "Brandon", "Catherine", "Dominic", "Eliza"]
-        last_names = ["Vance", "Sterling", "Holloway", "Chen", "Kim", "Patel", "Torres", "Morrison", "Zhang", "O'Connor",
-                      "Reynolds", "Sinclair", "Mercer", "Blackwood", "Caldwell", "Everett", "Fletcher", "Gallagher", "Huxley", "Ingram"]
-
-        patient_objs = []
-        for i in range(50):
-            fn = random.choice(first_names)
-            ln = random.choice(last_names)
-            pat = Patient(
-                organization_id=org.id,
-                first_name=fn,
-                last_name=ln,
-                dob=f"19{random.randint(45, 99)}-{random.randint(1, 12):02d}-{random.randint(1, 28):02d}",
-                gender=random.choice(["Male", "Female"]),
-                ssn_last4=f"{random.randint(1000, 9999)}",
-                phone=f"+1 ({random.randint(200, 999)}) 555-{random.randint(1000, 9999)}",
-                email=f"{fn.lower()}.{ln.lower()}{i}@example.com",
-                address=f"{random.randint(100, 9999)} Oak Ridge Parkway, Austin, TX",
-                insurance_member_id=f"MEM-{random.randint(10000000, 99999999)}",
-                insurance_group=f"GRP-{random.randint(1000, 9999)}",
-                payer_id=random.choice(payer_objs).id,
-                assigned_provider_id=random.choice(provider_objs).id
-            )
-            db.add(pat)
-            patient_objs.append(pat)
-            
-        await db.flush()
-
-        # 10. Seed ~300 Claims & Claim Lines across statuses
-        claim_statuses = ["Paid", "Paid", "Paid", "In Adjudication", "Submitted", "Ready for Review", "Denied"]
-        cpt_options = [
-            ("99214", "Office/Outpatient Visit, Established, Moderate MDM", 185.0),
-            ("99213", "Office/Outpatient Visit, Established, Low MDM", 135.0),
-            ("99215", "Office/Outpatient Visit, Established, High MDM", 260.0),
-            ("20610", "Arthrocentesis, Aspiration/Injection, Major Joint", 320.0),
-            ("93000", "Electrocardiogram, Routine ECG with 12 Leads", 95.0),
-            ("71045", "Radiologic Examination, Chest, Single View", 110.0),
-            ("72148", "Magnetic Resonance Imaging, Lumbar Spine without Contrast", 850.0),
-            ("11102", "Tangential Biopsy of Skin, Single Lesion", 195.0),
-        ]
-
-        claim_objs = []
-        denial_objs = []
-        ar_objs = []
-
-        for i in range(1, 301):
-            pat = random.choice(patient_objs)
-            prov = random.choice(provider_objs)
-            payer = random.choice(payer_objs)
-            status = random.choice(claim_statuses)
-            
-            # Form claim lines
-            chosen_cpts = random.sample(cpt_options, random.randint(1, 3))
-            total_charge = sum(c[2] for c in chosen_cpts)
-            
-            dos = (datetime.date.today() - datetime.timedelta(days=random.randint(2, 120))).isoformat()
-            
-            claim = Claim(
-                organization_id=org.id,
-                claim_number=f"CLM-2026-{1000 + i}",
-                patient_id=pat.id,
-                provider_id=prov.id,
-                payer_id=payer.id,
-                date_of_service=dos,
-                total_charge=total_charge,
-                status=status,
-                scrub_status="Passed" if status != "Denied" else "Warning",
-                scrub_details={
-                    "completeness": {"status": "Passed"},
-                    "coding_validation": {"status": "Passed"},
-                    "medical_necessity": {"status": "Passed", "score": 96}
-                },
-                medical_necessity_score=random.randint(88, 99),
-                prior_auth_number=f"AUTH-{random.randint(100000, 999999)}" if random.random() > 0.4 else None,
-                created_at=datetime.datetime.utcnow() - datetime.timedelta(days=random.randint(1, 90))
-            )
-            db.add(claim)
-            claim_objs.append((claim, chosen_cpts))
-
-        await db.flush()
-
-        # Add Claim Lines
-        for claim, chosen_cpts in claim_objs:
-            for idx, (cpt, desc, chg) in enumerate(chosen_cpts):
-                mod = "25" if idx == 0 and len(chosen_cpts) > 1 and cpt.startswith("992") else None
-                db.add(ClaimLine(
-                    organization_id=org.id,
-                    claim_id=claim.id,
-                    line_number=idx + 1,
-                    cpt_code=cpt,
-                    description=desc,
-                    modifier_1=mod,
-                    icd_pointers="M54.5, M17.11",
-                    units=1,
-                    charge_amount=chg,
-                    allowed_amount=round(chg * 0.85, 2),
-                    paid_amount=round(chg * 0.85, 2) if claim.status == "Paid" else 0.0
-                ))
-
-        # 11. Seed 20 Rich Denials with Root-Cause Reasoning & Citations
-        denial_codes = [
-            ("CO-50", "These are non-covered services because this is not deemed a medical necessity by the payer.", "Medical Necessity", policy_objs[0]),
-            ("PR-204", "This service is not covered under the patient's current benefit plan.", "Benefit Coverage", policy_objs[4]),
-            ("CO-16", "Claim lack of information or submission error. Missing clinical justification.", "Coding / Documentation", policy_objs[1]),
-            ("CO-97", "The benefit for this service is included in the payment/allowance for another service.", "CCI Bundling Edit", policy_objs[5]),
-            ("CO-18", "Duplicate claim/service received.", "Administrative / Duplicate", None),
-        ]
-
-        denied_claims = [c for c, _ in claim_objs if c.status == "Denied"][:20]
-        for idx, claim in enumerate(denied_claims):
-            d_code, d_reason, root_cause, pol = denial_codes[idx % len(denial_codes)]
-            
-            denial = Denial(
-                organization_id=org.id,
-                claim_id=claim.id,
-                denial_code=d_code,
-                denial_reason=d_reason,
-                ai_interpreted_reason=f"Payer denied claim #{claim.claim_number} citing {d_code}. Service lacked primary source documentation of conservative therapy failure under governing policy.",
-                root_cause_category=root_cause,
-                payer_policy_id=pol.id if pol else None,
-                cited_policy_text=f"Cited: {pol.title if pol else 'Payer Standard Clinical Coverage Guide'}, Section 3.2 Medical Indications.",
-                citation_metadata={"policy_number": pol.policy_number if pol else "LCD-GEN", "page": 4, "chunk_id": "chk-001"},
-                recommended_action="Submit Level 1 appeal with 6-week physical therapy records and diagnostic imaging reports.",
-                approval_likelihood_score=random.randint(75, 92),
-                approval_likelihood_reason="Strong clinical indicators present in patient medical chart to overturn denial upon formal appeal.",
-                status="Open" if idx > 4 else "Draft Appeal"
-            )
-            db.add(denial)
-            denial_objs.append(denial)
-
-        await db.flush()
-
-        # Seed 5 Appeals for the first denials
-        for d in denial_objs[:5]:
-            appeal = Appeal(
-                organization_id=org.id,
-                denial_id=d.id,
-                claim_id=d.claim_id,
-                appeal_letter_text=(
-                    f"ATTN: Claims Appeals & Grievances\n\n"
-                    f"RE: Level 1 Appeal for Claim #{d.claim_id}\n"
-                    f"Denial Reason: {d.denial_code} — {d.denial_reason}\n\n"
-                    f"We formally appeal the adverse adjudication on this claim. The service rendered was medically necessary and fully compliant with {d.cited_policy_text}.\n\n"
-                    f"Patient records demonstrate exhaustive conservative therapy and objective clinical signs justifying immediate coverage.\n\n"
-                    f"Respectfully submitted,\nRevenue Cycle Operations Team"
-                ),
-                original_draft_text="Initial automated draft generated.",
-                diff_summary="Synthesized clinical justification citing active policy guidelines.",
-                version=1,
-                status="Draft"
-            )
-            db.add(appeal)
-
-        # 12. Seed AR Follow-ups (Aging Buckets)
-        aging_claims = [c for c, _ in claim_objs if c.status in ["In Adjudication", "Submitted", "Denied"]][:30]
-        buckets = ["0–30", "31–60", "61–90", "90+"]
-        
-        for idx, c in enumerate(aging_claims):
-            b = buckets[idx % len(buckets)]
-            days = 15 if b == "0–30" else (45 if b == "31–60" else (75 if b == "61–90" else 115))
-            priority = "High" if b in ["61–90", "90+"] else "Medium"
-            
-            db.add(ARFollowup(
-                organization_id=org.id,
-                claim_id=c.id,
-                aging_bucket=b,
-                days_in_ar=days,
-                outstanding_amount=c.total_charge,
-                priority=priority,
-                last_contact_date=(datetime.date.today() - datetime.timedelta(days=12)).isoformat(),
-                next_followup_date=(datetime.date.today() + datetime.timedelta(days=4)).isoformat(),
-                ai_suggested_action=f"Call payer provider rep referencing claim #{c.claim_number} pending >{days} days.",
-                draft_email_subject=f"URGENT: Outstanding Claim Status #{c.claim_number}",
-                draft_email_body=f"Dear Payer Claims Representative, please provide immediate status on claim #{c.claim_number}.",
-                call_script=f"Contact claims rep with NPI, Tax ID and Claim #{c.claim_number} to request escalation.",
-                status="Pending"
-            ))
-
-        # 13. Seed Notifications & Tasks
-        notifications_data = [
-            ("High Priority: Denial Alert", "Claim #CLM-2026-1014 denied by Medicare Part B under CO-50.", "denial", "/denials"),
-            ("Credential Expiration Warning", "Dr. Marcus Vance TX Medical License expires in 28 days.", "credential_expiry", "/credentialing"),
-            ("AI Scrubber Notice", "14 claims successfully scrubbed and moved to Human Review Queue.", "claim_scrubbed", "/billing"),
-            ("Payer Policy Update", "Medicare LCD L33777 revised with new prior-auth requirements.", "alert", "/documents")
-        ]
-        for t, m, n_type, link in notifications_data:
-            db.add(Notification(
-                organization_id=org.id,
-                title=t,
-                message=m,
-                notification_type=n_type,
-                link=link
-            ))
-
-        # 14. Seed Audit Logs
-        for i in range(12):
-            db.add(AuditLog(
-                organization_id=org.id,
-                user_email="admin@mediflowai.health",
-                action="CLAIM_SCRUB_REVIEWED",
-                entity_type="Claim",
-                entity_id=f"CLM-2026-{1000 + i}",
-                prompt_text="Scrub claim for CPT 99214 + 93000 modifiers",
-                ai_output="Scrub Passed with Modifier 25 recommendation.",
-                is_phi_accessed=True
-            ))
-
-        # 15. Seed Integrations
-        integration_list = [
-            ("athenahealth", "Athenahealth EHR", "connected"),
-            ("waystar", "Waystar Clearinghouse", "connected"),
-            ("availity", "Availity Payer Gateway", "connected"),
-            ("drchrono", "DrChrono Clinical EHR", "disconnected"),
+        # 8. Active Clearinghouse & EHR Connectors (Available for configuration)
+        connectors = [
+            ("athenahealth", "Athenahealth EHR", "disconnected"),
+            ("waystar", "Waystar Clearinghouse", "disconnected"),
+            ("availity", "Availity Payer Portal", "disconnected"),
+            ("drchrono", "DrChrono EHR", "disconnected"),
             ("eclinicalworks", "eClinicalWorks", "disconnected"),
-            ("gdrive", "Google Drive Document Vault", "connected"),
-            ("sharepoint", "Microsoft SharePoint", "disconnected")
+            ("gdrive", "Google Drive Vault", "disconnected"),
+            ("sharepoint", "Microsoft SharePoint", "disconnected"),
         ]
-        for pkey, name, status in integration_list:
-            db.add(IntegrationConnection(
+        for key, name, status in connectors:
+            c = IntegrationConnection(
                 organization_id=org.id,
-                provider_key=pkey,
+                provider_key=key,
                 name=name,
-                status=status,
-                last_sync_at=datetime.datetime.utcnow() - datetime.timedelta(minutes=random.randint(5, 120))
-            ))
+                status=status
+            )
+            db.add(c)
 
-        # 16. Subscription
-        db.add(Subscription(
+        # 9. Practice SaaS Subscription
+        sub = Subscription(
             organization_id=org.id,
             plan_tier="Enterprise",
             status="active",
             max_users=50,
             max_claims_per_month=10000,
-            current_month_claims=300
-        ))
+            current_month_claims=0
+        )
+        db.add(sub)
 
         await db.commit()
-        print("[SUCCESS] Database successfully seeded with 15 providers, 50 patients, 300 claims, 20 denials, and rich RCM policies!")
+        print("[SUCCESS] Clean production database initialization complete (0 dummy claims/patients/providers).")
 
 if __name__ == "__main__":
     asyncio.run(seed_database())

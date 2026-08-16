@@ -8,7 +8,6 @@ import {
   Shield,
   ChevronDown,
   Command,
-  Database,
   Menu,
   LogOut
 } from 'lucide-react';
@@ -24,20 +23,9 @@ export default function Header({
   onOpenCommandPalette,
   onToggleMobileSidebar
 }: HeaderProps) {
-  const { user, logout, switchRole, dataMode, toggleDataMode } = useAuth();
-  const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
+  const { user, logout } = useAuth();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const currentRole = user?.role || 'super_admin';
-
-  const roles = [
-    { slug: 'super_admin', label: 'Admin (All Access)' },
-    { slug: 'billing_manager', label: 'Billing Manager' },
-    { slug: 'medical_biller', label: 'Medical Biller' },
-    { slug: 'credentialing_specialist', label: 'License Specialist' },
-    { slug: 'ar_specialist', label: 'Payment Collector' },
-    { slug: 'provider', label: 'Doctor / Provider' },
-    { slug: 'viewer', label: 'View Only' },
-  ];
 
   return (
     <header className="sticky top-0 z-30 h-16 bg-[#0D1322] border-b border-slate-800/80 px-3 sm:px-6 lg:px-8 flex items-center justify-between gap-2 transition-colors w-full">
@@ -70,22 +58,11 @@ export default function Header({
 
       {/* Right Controls */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-        {/* Real Data vs Demo Data Toggle Switch */}
-        <button
-          onClick={toggleDataMode}
-          title={dataMode === 'demo' ? 'Switch to Real Practice Data' : 'Switch to Demo Data'}
-          className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-2xl text-xs font-bold transition-all border shrink-0 ${
-            dataMode === 'demo'
-              ? 'bg-amber-950/50 text-amber-300 border-amber-800/60 hover:bg-amber-900/60'
-              : 'bg-emerald-950/50 text-emerald-300 border-emerald-800/60 hover:bg-emerald-900/60'
-          }`}
-        >
-          <Database className="w-3.5 h-3.5 shrink-0" />
-          <span className="hidden sm:inline">{dataMode === 'demo' ? 'Demo Data' : 'Real Data'}</span>
-          <span className="text-[10px] px-1 py-0.2 rounded-sm bg-black/40 font-mono uppercase">
-            {dataMode}
-          </span>
-        </button>
+        {/* Practice Live Status Badge */}
+        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-bold bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 shrink-0">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span>Live Practice</span>
+        </div>
 
         {/* Create Button */}
         <button
@@ -97,64 +74,29 @@ export default function Header({
           <span className="sm:hidden font-bold">New</span>
         </button>
 
-        {/* Role Switcher */}
-        <div className="relative">
-          <button
-            onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-2xl bg-[#111827] hover:bg-slate-800 text-xs font-semibold text-slate-200 border border-slate-800 transition-colors"
-          >
-            <Shield className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-            <span className="capitalize hidden md:inline truncate max-w-[90px]">{currentRole.replace('_', ' ')}</span>
-            <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
-          </button>
-
-          {isRoleDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-[#111827] rounded-2xl shadow-xl border border-slate-800 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
-              <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Switch Role Mode
-              </div>
-              {roles.map((r) => (
-                <button
-                  key={r.slug}
-                  onClick={() => {
-                    switchRole(r.slug);
-                    setIsRoleDropdownOpen(false);
-                  }}
-                  className={`w-full text-left px-3.5 py-1.5 text-xs transition-colors ${
-                    currentRole === r.slug
-                      ? 'bg-sky-950/60 text-sky-400 font-bold'
-                      : 'text-slate-300 hover:bg-slate-800'
-                  }`}
-                >
-                  {r.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* User Profile Avatar & Dropdown */}
         <div className="relative pl-1 border-l border-slate-800 shrink-0">
           <button
             onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-            className="flex items-center gap-2 p-1 rounded-xl hover:bg-slate-800 transition-colors"
+            className="flex items-center gap-2 p-1.5 rounded-2xl hover:bg-slate-800 transition-colors"
           >
             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
-              {user?.full_name?.charAt(0) || 'A'}
+              {user?.full_name?.charAt(0) || 'U'}
             </div>
-            <div className="hidden xl:block text-left truncate max-w-[120px]">
+            <div className="hidden xl:block text-left truncate max-w-[130px]">
               <p className="text-xs font-bold text-white leading-tight truncate">
-                {user?.full_name || 'Dr. Alexander Vance'}
+                {user?.full_name || 'Practice User'}
               </p>
-              <p className="text-[10px] text-slate-400 truncate">Apex Medical</p>
+              <p className="text-[10px] text-slate-400 truncate capitalize">{currentRole.replace('_', ' ')}</p>
             </div>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden xl:block" />
           </button>
 
           {isUserMenuOpen && (
-            <div className="absolute right-0 mt-2 w-52 bg-[#111827] rounded-2xl shadow-2xl border border-slate-800 p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+            <div className="absolute right-0 mt-2 w-56 bg-[#111827] rounded-2xl shadow-2xl border border-slate-800 p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
               <div className="px-3 py-2 border-b border-slate-800">
-                <p className="text-xs font-bold text-white truncate">{user?.full_name || 'Dr. Alexander Vance'}</p>
-                <p className="text-[11px] text-slate-400 truncate">{user?.email || 'admin@mediflowai.health'}</p>
+                <p className="text-xs font-bold text-white truncate">{user?.full_name || 'Practice User'}</p>
+                <p className="text-[11px] text-slate-400 truncate">{user?.email || 'user@practice.health'}</p>
                 <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-950 text-sky-300 border border-sky-800/60 uppercase">
                   {currentRole.replace('_', ' ')}
                 </span>

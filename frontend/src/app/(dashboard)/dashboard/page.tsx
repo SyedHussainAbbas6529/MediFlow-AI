@@ -58,10 +58,7 @@ export default function DashboardPage() {
     );
   }
 
-  // Real Mode vs Demo Mode data handling
-  const isRealMode = dataMode === 'real';
-
-  const realKpis = {
+  const kpis = data.kpis || {
     total_claims: { label: 'Total Claims Sent', value: '0', delta: '+0.0%', sparkline: [0, 0, 0, 0, 0, 0] },
     claims_billed: { label: 'Total Amount Billed', value: '$0.00', delta: '+0.0%', sparkline: [0, 0, 0, 0, 0, 0] },
     collections: { label: 'Money Received', value: '$0.00', delta: '+0.0%', sparkline: [0, 0, 0, 0, 0, 0] },
@@ -69,25 +66,10 @@ export default function DashboardPage() {
     ar_outstanding: { label: 'Waiting to be Paid', value: '$0.00', delta: '0.0%', sparkline: [0, 0, 0, 0, 0, 0] },
   };
 
-  const kpis = isRealMode ? realKpis : data.kpis;
-  const revenue_overview = isRealMode ? [
-    { month: 'Jan', billed: 0, collected: 0, ar_outstanding: 0 },
-    { month: 'Feb', billed: 0, collected: 0, ar_outstanding: 0 },
-    { month: 'Mar', billed: 0, collected: 0, ar_outstanding: 0 },
-    { month: 'Apr', billed: 0, collected: 0, ar_outstanding: 0 },
-    { month: 'May', billed: 0, collected: 0, ar_outstanding: 0 },
-    { month: 'Jun', billed: 0, collected: 0, ar_outstanding: 0 },
-  ] : data.revenue_overview;
-
-  const claims_by_status = isRealMode ? [
-    { status: 'Paid', count: 0, percentage: 0, color: '#10B981' },
-    { status: 'Submitted', count: 0, percentage: 0, color: '#0EA5E9' },
-    { status: 'In Review', count: 0, percentage: 0, color: '#F59E0B' },
-    { status: 'Denied', count: 0, percentage: 0, color: '#EF4444' },
-  ] : data.claims_by_status;
-
-  const provider_audit = isRealMode ? [] : data.provider_audit;
-  const expiring_soon = isRealMode ? [] : data.expiring_soon;
+  const revenue_overview = data.revenue_overview || [];
+  const claims_by_status = data.claims_by_status || [];
+  const provider_audit = data.provider_audit || [];
+  const expiring_soon = data.expiring_soon || [];
   const quick_prompts = data.quick_prompts || [];
 
   const SIMPLE_LABELS: Record<string, { title: string; subtitle: string; icon: any }> = {
@@ -104,23 +86,17 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className={`flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
-              isRealMode
-                ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
-                : 'bg-amber-950/80 text-amber-300 border-amber-800'
-            }`}>
-              <span className={`w-2 h-2 rounded-full ${isRealMode ? 'bg-emerald-400' : 'bg-amber-400'} animate-pulse`} />
-              {isRealMode ? 'Real Practice Mode (Live Clean State)' : 'Demo Mode (Sample Data Active)'}
+            <span className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-0.5 rounded-full border bg-emerald-950/80 text-emerald-300 border-emerald-800">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              Live Practice Operations (Clean State)
             </span>
-            <span className="text-xs text-slate-400">All systems working normally</span>
+            <span className="text-xs text-slate-400">HIPAA Secure • Real Data Mode</span>
           </div>
           <h1 className="text-2xl font-black text-white tracking-tight">
-            Billing & Practice Overview
+            Practice Overview & Billing Center
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            {isRealMode
-              ? 'Real-time live practice records. No sample data is mixed into this view.'
-              : 'Viewing demo practice dataset with sample claims, providers, and payment records.'}
+            Real-time practice records, claim processing metrics, and clinical revenue cycle.
           </p>
         </div>
 
